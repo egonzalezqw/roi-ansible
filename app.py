@@ -2,7 +2,7 @@ import streamlit as st
 
 st.title("ROI Calculator - Ansible")
 
-servidores = st.number_input("Número de servidores", 01)
+servidores = st.number_input("Número de servidores", 1)
 admins = st.number_input("Administradores", 3)
 salario = st.number_input("Salario mensual", 500)
 reduccion = st.slider("Reducción (%)", 0, 100, 70)
