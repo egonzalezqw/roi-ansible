@@ -65,7 +65,7 @@ else:
 st.sidebar.markdown("## 🔴 Datos del Cliente")
 
 # 🔴 Inputs
-servidores = st.sidebar.number_input("Número de servidores", value=100)
+dispositivos = st.sidebar.number_input("Número de dispositivos", value=100)
 admins = st.sidebar.number_input("Administradores", value=3)
 salario = st.sidebar.number_input("Salario mensual ($)", value=2500)
 horas_semana = st.sidebar.number_input("Horas semanales por admin", value=40)
