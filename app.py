@@ -1,10 +1,19 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # 🔴 Configuración de página
-st.set_page_config(page_title="ROI Ansible", layout="wide")
+st.set_page_config(
+    page_title="ROI Ansible",
+    layout="wide"
+)
 
-# 🔴 Estilos personalizados (ROJO)
+# 🔴 Rutas robustas (PRO)
+BASE_DIR = os.path.dirname(__file__)
+logo_path = os.path.join(BASE_DIR, "assets", "redhat.png")
+nexsys_path = os.path.join(BASE_DIR, "assets", "nexsys.png")
+
+# 🔴 Estilos personalizados
 st.markdown("""
     <style>
     .main {
@@ -30,19 +39,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🔴 HEADER CON LOGO
+# 🔴 HEADER con logo
 col_logo, col_title = st.columns([1, 5])
 
 with col_logo:
-    st.image("/mnt/data/logo-redhat-a-color-rgb__2___1_2RqDB78NsfFPIiO1SfVoPbi4JbXcuLVpJ5JUKnMP.png", width=120)
+    st.image(logo_path, width=120)
 
 with col_title:
     st.title("💰 ROI Calculator - Ansible")
 
-# 🔴 Sidebar con imagen
-st.sidebar.image("/mnt/data/nexsys.png", use_column_width=True)
+# 🔴 Sidebar con branding
+st.sidebar.image(nexsys_path, use_column_width=True)
 st.sidebar.markdown("## 🔴 Datos del Cliente")
 
+# 🔴 Inputs
 servidores = st.sidebar.number_input("Número de servidores", value=100)
 admins = st.sidebar.number_input("Administradores", value=3)
 salario = st.sidebar.number_input("Salario mensual ($)", value=2500)
@@ -110,7 +120,7 @@ col7, col8 = st.columns(2)
 col7.metric("Ahorro por eficiencia", f"${ahorro_tiempo:,.0f}")
 col8.metric("Ahorro por errores", f"${ahorro_errores:,.0f}")
 
-# 🔴 Resultado
+# 🔴 Resultado ejecutivo
 st.subheader("📢 Resultado Ejecutivo")
 
 if roi > 150:
@@ -120,7 +130,7 @@ elif roi > 80:
 else:
     st.markdown(f"### ⚫ ROI bajo ({roi:.1f}%) - revisar supuestos")
 
-# 🔴 Resumen
+# 🔴 Resumen para cliente
 st.markdown(
     f"""
     ---
