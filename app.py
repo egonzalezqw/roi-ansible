@@ -1,148 +1,106 @@
 import streamlit as st
 import pandas as pd
-import os
+import random
 
-# 🔴 Configuración de página
-st.set_page_config(page_title="ROI Ansible", layout="wide")
+st.set_page_config(page_title="Linux Lab Game", layout="centered")
 
-# 🔴 Base directory
-BASE_DIR = os.path.dirname(__file__)
-assets_path = os.path.join(BASE_DIR, "assets")
+# ----------------------
+# QUESTIONS / CHALLENGES
+# ----------------------
+challenges = [
+    {"q": "List all files in the current directory", "a": "ls"},
+    {"q": "Copy all .txt files to folder red", "a": "cp *.txt red/"},
+    {"q": "Move all .log files to folder blue", "a": "mv *.log blue/"},
+    {"q": "Delete files starting with eliminar with confirmation", "a": "rm -i eliminar*"},
+    {"q": "Create backup/2026/marzo in one command", "a": "mkdir -p backup/2026/marzo"},
+    {"q": "Remove non-empty directory test_directory safely", "a": "rm -ri test_directory"},
+    {"q": "Copy directory red into backup", "a": "cp -r red backup/"},
+    {"q": "List hidden files", "a": "ls -a"},
+    {"q": "Show current directory path", "a": "pwd"},
+    {"q": "Change permissions to executable for all", "a": "chmod a+x archivo"},
+    {"q": "Find command location for ls", "a": "which ls"},
+    {"q": "Display PATH variable", "a": "echo $PATH"}
+]
 
-# 🔍 Buscar automáticamente el logo de Red Hat
-logo_path = None
-for file in os.listdir(assets_path):
-    if "redhat" in file.lower():
-        logo_path = os.path.join(assets_path, file)
+# ----------------------
+# SESSION STATE
+# ----------------------
+if "index" not in st.session_state:
+    st.session_state.index = 0
+    st.session_state.score = 0
+    st.session_state.name = ""
 
-# 🔍 Nexsys (nombre esperado)
-nexsys_path = os.path.join(assets_path, "nexsys.png")
+# ----------------------
+# TITLE
+# ----------------------
+st.title("🐧 Linux Challenge Game - NDG I")
 
-# 🔴 Estilos personalizados
-st.markdown("""
-    <style>
-    .main {
-        background-color: #ffffff;
-    }
-    .stMetric {
-        background-color: #f2d6d6;
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-    }
-    .stMetric label {
-        color: #800000;
-        font-weight: bold;
-    }
-    .stMetric div {
-        color: #000000;
-        font-size: 22px;
-    }
-    h1, h2, h3 {
-        color: #800000;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# ----------------------
+# NAME INPUT
+# ----------------------
+if st.session_state.name == "":
+    name = st.text_input("Enter your name:")
+    if st.button("Start Game"):
+        if name:
+            st.session_state.name = name
+            random.shuffle(challenges)
+            st.rerun()
 
-# 🔴 HEADER
-col_logo, col_title = st.columns([1, 5])
+# ----------------------
+# GAME
+# ----------------------
+else:
+    if st.session_state.index < len(challenges):
+        c = challenges[st.session_state.index]
 
-with col_logo:
-    if logo_path and os.path.exists(logo_path):
-        st.image(logo_path, width=120)
+        st.subheader(f"Challenge {st.session_state.index + 1}")
+        st.write(c["q"])
+
+        answer = st.text_input("Your command:", key=st.session_state.index)
+
+        if st.button("Submit"):
+            if answer.strip().lower() == c["a"]:
+                st.success("✅ Correct!")
+                st.session_state.score += 10
+            else:
+                st.error(f"❌ Incorrect. Expected: {c['a']}")
+                st.session_state.score -= 2
+
+            st.session_state.index += 1
+            st.rerun()
+
+        st.progress(st.session_state.index / len(challenges))
+        st.write(f"Score: {st.session_state.score}")
+
     else:
-        st.warning("⚠️ Logo Red Hat no encontrado en /assets")
+        st.success("🎉 Game Finished!")
+        st.write(f"Player: {st.session_state.name}")
+        st.write(f"Final Score: {st.session_state.score}")
 
-with col_title:
-    st.title("💰 ROI Calculator - Ansible")
+        # SAVE SCORES
+        try:
+            df = pd.read_csv("scores.csv")
+        except:
+            df = pd.DataFrame(columns=["name", "score"])
 
-# 🔴 Sidebar
-if os.path.exists(nexsys_path):
-    st.sidebar.image(nexsys_path, use_column_width=True)
-else:
-    st.sidebar.warning("⚠️ Imagen nexsys.png no encontrada")
+        new = pd.DataFrame([[st.session_state.name, st.session_state.score]], columns=["name", "score"])
+        df = pd.concat([df, new], ignore_index=True)
+        df = df.sort_values(by="score", ascending=False)
+        df.to_csv("scores.csv", index=False)
 
-st.sidebar.markdown("## 🔴 Datos del Cliente")
+        st.subheader("🏆 TOP PLAYERS")
 
-# 🔴 Inputs
-dispositivos = st.sidebar.number_input("Número de dispositivos", value=100)
-admins = st.sidebar.number_input("Administradores", value=3)
-salario = st.sidebar.number_input("Salario mensual ($)", value=2500)
-horas_semana = st.sidebar.number_input("Horas semanales por admin", value=40)
+        if len(df) > 0:
+            st.write(f"🥇 1st: {df.iloc[0]['name']} - {df.iloc[0]['score']}")
+        if len(df) > 1:
+            st.write(f"🥈 2nd: {df.iloc[1]['name']} - {df.iloc[1]['score']}")
+        if len(df) > 2:
+            st.write(f"🥉 3rd: {df.iloc[2]['name']} - {df.iloc[2]['score']}")
 
-porc_tareas = st.sidebar.slider("% tiempo en tareas manuales", 0, 100, 60)
-reduccion = st.sidebar.slider("% automatización con Ansible", 0, 100, 90)
+        st.dataframe(df)
 
-incidentes = st.sidebar.number_input("Incidentes mensuales", value=5)
-costo_incidente = st.sidebar.number_input("Costo por incidente ($)", value=200)
-reduccion_errores = st.sidebar.slider("% reducción de errores", 0, 100, 80)
-
-costo_ansible = st.sidebar.number_input("Costo Ansible anual ($)", value=10000)
-
-# 🔴 Cálculos
-horas_anuales = horas_semana * 52
-costo_anual_personal = admins * salario * 12
-
-costo_hora = costo_anual_personal / (admins * horas_anuales)
-
-horas_manual = horas_anuales * admins * (porc_tareas / 100)
-horas_ahorradas = horas_manual * (reduccion / 100)
-ahorro_tiempo = horas_ahorradas * costo_hora
-
-costo_errores_actual = incidentes * costo_incidente * 12
-ahorro_errores = costo_errores_actual * (reduccion_errores / 100)
-
-ahorro_total = ahorro_tiempo + ahorro_errores
-costo_total_actual = costo_anual_personal + costo_errores_actual
-
-roi = ((ahorro_total - costo_ansible) / costo_ansible) * 100 if costo_ansible > 0 else 0
-payback = (costo_ansible / ahorro_total) * 12 if ahorro_total > 0 else 0
-
-# 🔴 KPIs
-col1, col2, col3 = st.columns(3)
-col1.metric("💼 Costo actual anual", f"${costo_total_actual:,.0f}")
-col2.metric("💸 Ahorro estimado", f"${ahorro_total:,.0f}")
-col3.metric("📈 ROI (%)", f"{roi:,.1f}%")
-
-st.divider()
-
-col4, col5, col6 = st.columns(3)
-col4.metric("⏱️ Payback (meses)", f"{payback:,.1f}")
-col5.metric("🕒 Horas ahorradas/año", f"{horas_ahorradas:,.0f}")
-col6.metric("⚙️ Costo Ansible", f"${costo_ansible:,.0f}")
-
-# 🔴 Gráfico
-st.subheader("📊 Comparación de Costos")
-
-data = pd.DataFrame({
-    "Concepto": ["Costo Actual", "Costo con Ansible"],
-    "Valor": [costo_total_actual, costo_total_actual - ahorro_total]
-})
-
-st.bar_chart(data.set_index("Concepto"))
-
-# 🔴 Detalle
-st.subheader("🔍 Detalle de Ahorros")
-
-col7, col8 = st.columns(2)
-col7.metric("Ahorro por eficiencia", f"${ahorro_tiempo:,.0f}")
-col8.metric("Ahorro por errores", f"${ahorro_errores:,.0f}")
-
-# 🔴 Resultado
-st.subheader("📢 Resultado Ejecutivo")
-
-if roi > 150:
-    st.markdown(f"### 🔴 Inversión altamente rentable (ROI {roi:.1f}%)")
-elif roi > 80:
-    st.markdown(f"### 🟠 Buena oportunidad de automatización (ROI {roi:.1f}%)")
-else:
-    st.markdown(f"### ⚫ ROI bajo ({roi:.1f}%) - revisar supuestos")
-
-# 🔴 Resumen
-st.markdown(f"""
----
-### 📄 Resumen para Cliente
-
-Con Ansible, la organización puede ahorrar aproximadamente **${ahorro_total:,.0f} al año**,  
-logrando un **ROI de {roi:.1f}%** y recuperando la inversión en **{payback:.1f} meses**.
-""")
+        if st.button("Play Again"):
+            st.session_state.index = 0
+            st.session_state.score = 0
+            st.session_state.name = ""
+            st.rerun()
