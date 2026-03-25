@@ -1,132 +1,163 @@
 import streamlit as st
 import pandas as pd
 
-# 🔴 Configuración de página
-st.set_page_config(page_title="ROI Ansible", layout="wide")
+# ----------------------
+# CONFIG
+# ----------------------
+st.set_page_config(page_title="ROI Ansible Pro", layout="wide")
 
-# 🔴 Estilos personalizados (ROJO)
+# ----------------------
+# STYLES
+# ----------------------
 st.markdown("""
-    <style>
-    .main {
-        background-color: #ffffff;
-    }
-    .stMetric {
-        background-color: #f2d6d6;
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-    }
-    .stMetric label {
-        color: #800000;
-        font-weight: bold;
-    }
-    .stMetric div {
-        color: #000000;
-        font-size: 22px;
-    }
-    h1, h2, h3 {
-        color: #800000;
-    }
-    </style>
+<style>
+.main {background-color: #ffffff;}
+.stMetric {
+    background-color: #f8e6e6;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+}
+h1, h2, h3 {color: #800000;}
+</style>
 """, unsafe_allow_html=True)
 
-# 🔴 HEADER CON LOGO
-col_logo, col_title = st.columns([1, 5])
+# ----------------------
+# FUNCTIONS
+# ----------------------
+def calcular_roi(admins, salario, horas_semana, porc_tareas, reduccion,
+                 incidentes, costo_incidente, reduccion_errores, costo_ansible):
 
-with col_logo:
-    st.image("/mnt/data/logo-redhat-a-color-rgb__2___1_2RqDB78NsfFPIiO1SfVoPbi4JbXcuLVpJ5JUKnMP.png", width=120)
+    horas_anuales = horas_semana * 52
+    costo_anual_personal = admins * salario * 12
 
-with col_title:
-    st.title("💰 ROI Calculator - Ansible")
+    costo_hora = costo_anual_personal / (admins * horas_anuales)
 
-# 🔴 Sidebar con imagen
-st.sidebar.image("/mnt/data/nexsys.png", use_column_width=True)
-st.sidebar.markdown("## 🔴 Datos del Cliente")
+    horas_manual = horas_anuales * admins * (porc_tareas / 100)
+    costo_manual = horas_manual * costo_hora
 
-servidores = st.sidebar.number_input("Número de servidores", value=100)
-admins = st.sidebar.number_input("Administradores", value=3)
-salario = st.sidebar.number_input("Salario mensual ($)", value=2500)
-horas_semana = st.sidebar.number_input("Horas semanales por admin", value=40)
+    horas_ahorradas = horas_manual * (reduccion / 100)
+    ahorro_tiempo = horas_ahorradas * costo_hora
 
-porc_tareas = st.sidebar.slider("% tiempo en tareas manuales", 0, 100, 60)
-reduccion = st.sidebar.slider("% automatización con Ansible", 0, 100, 90)
+    costo_errores_actual = incidentes * costo_incidente * 12
+    ahorro_errores = costo_errores_actual * (reduccion_errores / 100)
 
-incidentes = st.sidebar.number_input("Incidentes mensuales", value=5)
-costo_incidente = st.sidebar.number_input("Costo por incidente ($)", value=200)
-reduccion_errores = st.sidebar.slider("% reducción de errores", 0, 100, 80)
+    ahorro_total = ahorro_tiempo + ahorro_errores
+    costo_total_actual = costo_anual_personal + costo_errores_actual
 
-costo_ansible = st.sidebar.number_input("Costo Ansible anual ($)", value=10000)
+    roi = ((ahorro_total - costo_ansible) / costo_ansible) * 100 if costo_ansible > 0 else 0
+    payback = (costo_ansible / ahorro_total) * 12 if ahorro_total > 0 else 0
 
-# 🔴 Cálculos
-horas_anuales = horas_semana * 52
-costo_anual_personal = admins * salario * 12
+    return {
+        "costo_total": costo_total_actual,
+        "ahorro_total": ahorro_total,
+        "roi": roi,
+        "payback": payback,
+        "horas_ahorradas": horas_ahorradas,
+        "ahorro_tiempo": ahorro_tiempo,
+        "ahorro_errores": ahorro_errores
+    }
 
-costo_hora = costo_anual_personal / (admins * horas_anuales)
+# ----------------------
+# HEADER
+# ----------------------
+col1, col2 = st.columns([1, 5])
 
-horas_manual = horas_anuales * admins * (porc_tareas / 100)
-costo_manual = horas_manual * costo_hora
+with col1:
+    st.image("/mnt/data/logo-redhat-a-color-rgb__2___1_2RqDB78NsfFPIiO1SfVoPbi4JbXcuLVpJ5JUKnMP.png", width=100)
 
-horas_ahorradas = horas_manual * (reduccion / 100)
-ahorro_tiempo = horas_ahorradas * costo_hora
+with col2:
+    st.title("💰 ROI Calculator - Ansible (Pro)")
+    st.caption("Optimiza decisiones de automatización")
 
-costo_errores_actual = incidentes * costo_incidente * 12
-ahorro_errores = costo_errores_actual * (reduccion_errores / 100)
+# ----------------------
+# SIDEBAR
+# ----------------------
+st.sidebar.header("📊 Datos del Cliente")
 
-ahorro_total = ahorro_tiempo + ahorro_errores
-costo_total_actual = costo_anual_personal + costo_errores_actual
+servidores = st.sidebar.number_input("Servidores", min_value=1, value=100)
+admins = st.sidebar.number_input("Administradores", min_value=1, value=3)
+salario = st.sidebar.number_input("Salario mensual ($)", min_value=0, value=2500)
+horas_semana = st.sidebar.number_input("Horas semanales", min_value=1, value=40)
 
-roi = ((ahorro_total - costo_ansible) / costo_ansible) * 100 if costo_ansible > 0 else 0
-payback = (costo_ansible / ahorro_total) * 12 if ahorro_total > 0 else 0
+porc_tareas = st.sidebar.slider("% tareas manuales", 0, 100, 60)
+reduccion = st.sidebar.slider("% automatización", 0, 100, 90)
 
-# 🔴 KPIs principales
+incidentes = st.sidebar.number_input("Incidentes mensuales", min_value=0, value=5)
+costo_incidente = st.sidebar.number_input("Costo por incidente", min_value=0, value=200)
+reduccion_errores = st.sidebar.slider("% reducción errores", 0, 100, 80)
+
+costo_ansible = st.sidebar.number_input("Costo Ansible anual", min_value=0, value=10000)
+
+# ----------------------
+# CALCULATION
+# ----------------------
+result = calcular_roi(admins, salario, horas_semana, porc_tareas, reduccion,
+                      incidentes, costo_incidente, reduccion_errores, costo_ansible)
+
+# ----------------------
+# KPIs
+# ----------------------
 col1, col2, col3 = st.columns(3)
-
-col1.metric("💼 Costo actual anual", f"${costo_total_actual:,.0f}")
-col2.metric("💸 Ahorro estimado", f"${ahorro_total:,.0f}")
-col3.metric("📈 ROI (%)", f"{roi:,.1f}%")
+col1.metric("💼 Costo actual", f"${result['costo_total']:,.0f}")
+col2.metric("💸 Ahorro", f"${result['ahorro_total']:,.0f}")
+col3.metric("📈 ROI", f"{result['roi']:,.1f}%")
 
 st.divider()
 
 col4, col5, col6 = st.columns(3)
+col4.metric("⏱ Payback (meses)", f"{result['payback']:,.1f}")
+col5.metric("🕒 Horas ahorradas", f"{result['horas_ahorradas']:,.0f}")
+col6.metric("⚙️ Inversión", f"${costo_ansible:,.0f}")
 
-col4.metric("⏱️ Payback (meses)", f"{payback:,.1f}")
-col5.metric("🕒 Horas ahorradas/año", f"{horas_ahorradas:,.0f}")
-col6.metric("⚙️ Costo Ansible", f"${costo_ansible:,.0f}")
+# ----------------------
+# CHART
+# ----------------------
+st.subheader("📊 Comparación")
 
-# 🔴 Gráfico
-st.subheader("📊 Comparación de Costos")
-
-data = pd.DataFrame({
-    "Concepto": ["Costo Actual", "Costo con Ansible"],
-    "Valor": [costo_total_actual, costo_total_actual - ahorro_total]
+df = pd.DataFrame({
+    "Escenario": ["Actual", "Con Ansible"],
+    "Costo": [result['costo_total'], result['costo_total'] - result['ahorro_total']]
 })
 
-st.bar_chart(data.set_index("Concepto"))
+st.bar_chart(df.set_index("Escenario"))
 
-# 🔴 Detalle de ahorro
-st.subheader("🔍 Detalle de Ahorros")
-
+# ----------------------
+# DETAIL
+# ----------------------
+st.subheader("🔍 Detalle")
 col7, col8 = st.columns(2)
-col7.metric("Ahorro por eficiencia", f"${ahorro_tiempo:,.0f}")
-col8.metric("Ahorro por errores", f"${ahorro_errores:,.0f}")
+col7.metric("Ahorro eficiencia", f"${result['ahorro_tiempo']:,.0f}")
+col8.metric("Ahorro errores", f"${result['ahorro_errores']:,.0f}")
 
-# 🔴 Resultado
-st.subheader("📢 Resultado Ejecutivo")
+# ----------------------
+# RESULT MESSAGE
+# ----------------------
+st.subheader("📢 Resultado")
 
-if roi > 150:
-    st.markdown(f"### 🔴 Inversión altamente rentable (ROI {roi:.1f}%)")
-elif roi > 80:
-    st.markdown(f"### 🟠 Buena oportunidad de automatización (ROI {roi:.1f}%)")
+if result['roi'] > 150:
+    st.success(f"Inversión altamente rentable (ROI {result['roi']:.1f}%)")
+elif result['roi'] > 80:
+    st.warning(f"Buena oportunidad (ROI {result['roi']:.1f}%)")
 else:
-    st.markdown(f"### ⚫ ROI bajo ({roi:.1f}%) - revisar supuestos")
+    st.error(f"ROI bajo ({result['roi']:.1f}%)")
 
-# 🔴 Resumen
-st.markdown(
-    f"""
-    ---
-    ### 📄 Resumen para Cliente
+# ----------------------
+# SUMMARY
+# ----------------------
+st.markdown(f"""
+---
+### 📄 Resumen Ejecutivo
 
-    Con Ansible, la organización puede ahorrar aproximadamente **${ahorro_total:,.0f} al año**,  
-    logrando un **ROI de {roi:.1f}%** y recuperando la inversión en **{payback:.1f} meses**.
-    """
-)
+Ahorro estimado: **${result['ahorro_total']:,.0f} / año**  
+ROI: **{result['roi']:.1f}%**  
+Payback: **{result['payback']:.1f} meses**
+""")
+
+# ----------------------
+# DOWNLOAD REPORT
+# ----------------------
+if st.button("📥 Descargar resultados"):
+    df_export = pd.DataFrame([result])
+    st.download_button("Descargar CSV", df_export.to_csv(index=False), "roi_ansible.csv")
+
