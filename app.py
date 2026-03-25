@@ -30,17 +30,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🔴 HEADER CON LOGO
-col_logo, col_title = st.columns([1, 5])
+# 🔴 Título
+st.title("💰 ROI Calculator - Ansible")
 
-with col_logo:
-    st.image("/mnt/data/logo-redhat-a-color-rgb__2___1_2RqDB78NsfFPIiO1SfVoPbi4JbXcuLVpJ5JUKnMP.png", width=120)
-
-with col_title:
-    st.title("💰 ROI Calculator - Ansible")
-
-# 🔴 Sidebar con imagen
-st.sidebar.image("/mnt/data/nexsys.png", use_column_width=True)
+# 🔴 Sidebar estilo formulario
 st.sidebar.markdown("## 🔴 Datos del Cliente")
 
 servidores = st.sidebar.number_input("Número de servidores", value=100)
@@ -93,7 +86,7 @@ col4.metric("⏱️ Payback (meses)", f"{payback:,.1f}")
 col5.metric("🕒 Horas ahorradas/año", f"{horas_ahorradas:,.0f}")
 col6.metric("⚙️ Costo Ansible", f"${costo_ansible:,.0f}")
 
-# 🔴 Gráfico
+# 🔴 Gráfico en rojo
 st.subheader("📊 Comparación de Costos")
 
 data = pd.DataFrame({
@@ -110,7 +103,7 @@ col7, col8 = st.columns(2)
 col7.metric("Ahorro por eficiencia", f"${ahorro_tiempo:,.0f}")
 col8.metric("Ahorro por errores", f"${ahorro_errores:,.0f}")
 
-# 🔴 Resultado
+# 🔴 Mensaje ejecutivo (sin verde/azul)
 st.subheader("📢 Resultado Ejecutivo")
 
 if roi > 150:
@@ -120,7 +113,7 @@ elif roi > 80:
 else:
     st.markdown(f"### ⚫ ROI bajo ({roi:.1f}%) - revisar supuestos")
 
-# 🔴 Resumen
+# 🔴 Mensaje comercial listo
 st.markdown(
     f"""
     ---
