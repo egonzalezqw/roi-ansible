@@ -10,24 +10,56 @@ st.set_page_config(
 )
 
 # ----------------------
-# STYLES
+# CSS MEJORADO (FIX MOBILE + CONTRASTE)
 # ----------------------
 st.markdown("""
 <style>
+
+/* Fondo general */
 .main {
     background-color: #ffffff;
 }
 
+/* FIX CRÍTICO: st.metric en móvil */
 .stMetric {
-    background-color: #f8e6e6;
-    padding: 15px;
-    border-radius: 12px;
+    background-color: #f3f4f6 !important;
+    padding: 16px;
+    border-radius: 14px;
     text-align: center;
+    border: 1px solid #e5e7eb;
 }
 
-h1, h2, h3 {
-    color: #800000;
+/* Forzar visibilidad de texto dentro de métricas */
+.stMetric * {
+    color: #111827 !important;
 }
+
+/* Mejora títulos */
+h1, h2, h3 {
+    color: #7f1d1d;
+}
+
+/* Subtítulo tipo caption más visible */
+[data-testid="stCaptionContainer"] {
+    color: #374151 !important;
+}
+
+/* Cards personalizados para secciones */
+.card {
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* Mejor separación en móvil */
+@media (max-width: 768px) {
+    .stMetric {
+        margin-bottom: 12px;
+    }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -84,80 +116,29 @@ def calcular_roi(
 # HEADER
 # ----------------------
 st.title("🤖 ROI de Automatización")
-st.caption(
-    "Calculadora para estimar el retorno de inversión de proyectos de automatización"
-)
+st.caption("Calculadora para estimar el retorno de inversión de proyectos de automatización")
 
 # ----------------------
 # SIDEBAR
 # ----------------------
 st.sidebar.header("📊 Datos del Cliente")
 
-servidores = st.sidebar.number_input(
-    "Cantidad de servidores",
-    min_value=1,
-    value=100
-)
+admins = st.sidebar.number_input("Cantidad de administradores", min_value=1, value=3)
+salario = st.sidebar.number_input("Salario mensual ($)", min_value=0, value=2500)
+horas_semana = st.sidebar.number_input("Horas por semana", min_value=1, value=40)
 
-admins = st.sidebar.number_input(
-    "Cantidad de administradores",
-    min_value=1,
-    value=3
-)
+porc_tareas = st.sidebar.slider("% tareas manuales", 0, 100, 60)
+reduccion = st.sidebar.slider("% automatización", 0, 100, 90)
 
-salario = st.sidebar.number_input(
-    "Salario mensual por administrador ($)",
-    min_value=0,
-    value=2500
-)
+incidentes = st.sidebar.number_input("Incidentes mensuales", min_value=0, value=5)
+costo_incidente = st.sidebar.number_input("Costo incidente ($)", min_value=0, value=200)
 
-horas_semana = st.sidebar.number_input(
-    "Horas laborales por semana",
-    min_value=1,
-    value=40
-)
+reduccion_errores = st.sidebar.slider("% reducción errores", 0, 100, 80)
 
-porc_tareas = st.sidebar.slider(
-    "% de tareas manuales",
-    0,
-    100,
-    60
-)
-
-reduccion = st.sidebar.slider(
-    "% de automatización esperado",
-    0,
-    100,
-    90
-)
-
-incidentes = st.sidebar.number_input(
-    "Incidentes mensuales",
-    min_value=0,
-    value=5
-)
-
-costo_incidente = st.sidebar.number_input(
-    "Costo promedio por incidente ($)",
-    min_value=0,
-    value=200
-)
-
-reduccion_errores = st.sidebar.slider(
-    "% reducción de errores",
-    0,
-    100,
-    80
-)
-
-costo_automatizacion = st.sidebar.number_input(
-    "Costo anual del proyecto ($)",
-    min_value=0,
-    value=10000
-)
+costo_automatizacion = st.sidebar.number_input("Costo proyecto ($)", min_value=0, value=10000)
 
 # ----------------------
-# CALCULATION
+# CALCULO
 # ----------------------
 result = calcular_roi(
     admins,
@@ -177,44 +158,26 @@ result = calcular_roi(
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric(
-        "💼 Costo Actual",
-        f"${result['costo_total']:,.0f}"
-    )
+    st.metric("💼 Costo Actual", f"${result['costo_total']:,.0f}")
 
 with col2:
-    st.metric(
-        "💸 Ahorro Anual",
-        f"${result['ahorro_total']:,.0f}"
-    )
+    st.metric("💸 Ahorro Anual", f"${result['ahorro_total']:,.0f}")
 
 with col3:
-    st.metric(
-        "📈 ROI",
-        f"{result['roi']:,.1f}%"
-    )
+    st.metric("📈 ROI", f"{result['roi']:,.1f}%")
 
 st.divider()
 
 col4, col5, col6 = st.columns(3)
 
 with col4:
-    st.metric(
-        "⏱ Recuperación (Meses)",
-        f"{result['payback']:,.1f}"
-    )
+    st.metric("⏱ Payback (meses)", f"{result['payback']:,.1f}")
 
 with col5:
-    st.metric(
-        "🕒 Horas Ahorradas",
-        f"{result['horas_ahorradas']:,.0f}"
-    )
+    st.metric("🕒 Horas ahorradas", f"{result['horas_ahorradas']:,.0f}")
 
 with col6:
-    st.metric(
-        "💰 Inversión",
-        f"${costo_automatizacion:,.0f}"
-    )
+    st.metric("💰 Inversión", f"${costo_automatizacion:,.0f}")
 
 # ----------------------
 # CHART
@@ -232,77 +195,43 @@ df = pd.DataFrame({
 st.bar_chart(df.set_index("Escenario"))
 
 # ----------------------
-# DETAIL
-# ----------------------
-st.subheader("🔍 Detalle de Ahorros")
-
-col7, col8 = st.columns(2)
-
-with col7:
-    st.metric(
-        "⚙️ Ahorro por Eficiencia",
-        f"${result['ahorro_tiempo']:,.0f}"
-    )
-
-with col8:
-    st.metric(
-        "🛡️ Ahorro por Reducción de Errores",
-        f"${result['ahorro_errores']:,.0f}"
-    )
-
-# ----------------------
-# RESULT MESSAGE
+# RESULTADO
 # ----------------------
 st.subheader("📢 Resultado Ejecutivo")
 
 if result["roi"] > 150:
-    st.success(
-        f"La inversión es altamente rentable. ROI estimado: {result['roi']:.1f}%"
-    )
-
+    st.success(f"Alta rentabilidad. ROI: {result['roi']:.1f}%")
 elif result["roi"] > 80:
-    st.warning(
-        f"La inversión presenta una buena oportunidad. ROI estimado: {result['roi']:.1f}%"
-    )
-
+    st.warning(f"Buena oportunidad. ROI: {result['roi']:.1f}%")
 else:
-    st.error(
-        f"El ROI proyectado es bajo ({result['roi']:.1f}%)."
-    )
+    st.error(f"ROI bajo: {result['roi']:.1f}%")
 
 # ----------------------
-# SUMMARY
+# RESUMEN
 # ----------------------
 st.markdown(f"""
----
 ## 📄 Resumen Ejecutivo
 
-La automatización permitiría obtener aproximadamente:
-
-- 💰 **${result['ahorro_total']:,.0f} de ahorro anual**
-- 📈 **ROI estimado de {result['roi']:.1f}%**
-- ⏱ **Recuperación de la inversión en {result['payback']:.1f} meses**
-- 🕒 **{result['horas_ahorradas']:,.0f} horas liberadas al año**
+- 💰 Ahorro anual: **${result['ahorro_total']:,.0f}**
+- 📈 ROI: **{result['roi']:.1f}%**
+- ⏱ Payback: **{result['payback']:.1f} meses**
+- 🕒 Horas liberadas: **{result['horas_ahorradas']:,.0f}**
 """)
 
 # ----------------------
 # EXPORT
 # ----------------------
-st.subheader("📥 Exportar Resultados")
-
 df_export = pd.DataFrame([{
     "Costo Actual": result["costo_total"],
     "Ahorro Total": result["ahorro_total"],
-    "ROI (%)": result["roi"],
-    "Payback (Meses)": result["payback"],
-    "Horas Ahorradas": result["horas_ahorradas"],
-    "Ahorro por Tiempo": result["ahorro_tiempo"],
-    "Ahorro por Errores": result["ahorro_errores"]
+    "ROI": result["roi"],
+    "Payback": result["payback"],
+    "Horas": result["horas_ahorradas"]
 }])
 
 st.download_button(
-    label="📄 Descargar CSV",
-    data=df_export.to_csv(index=False),
-    file_name="roi_automatizacion.csv",
-    mime="text/csv"
+    "📄 Descargar CSV",
+    df_export.to_csv(index=False),
+    "roi.csv",
+    "text/csv"
 )
